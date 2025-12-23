@@ -46,6 +46,12 @@ This platform enables interviewers and candidates to collaborate in real-time on
 - Socket.IO (WebSocket server)
 - class-validator (validation)
 
+**Code Execution:**
+- Web Workers (isolated execution environment)
+- Pyodide (Python compiled to WebAssembly/WASM)
+- Browser-native JavaScript execution
+- All execution happens client-side (no server-side code execution)
+
 **Testing:**
 - Jest + Supertest (backend integration)
 - Playwright (frontend E2E)
@@ -327,6 +333,46 @@ See `openapi.yaml` for complete API documentation.
 
 See `websocket-events.md` for detailed event specifications.
 
+## 💻 Code Execution
+
+The platform supports safe, client-side code execution using WebAssembly (WASM):
+
+### Supported Languages
+
+- **JavaScript**: Executed natively in Web Worker with strict mode
+- **TypeScript**: Executed as JavaScript (TypeScript is a superset of JavaScript)
+- **Python**: Executed using Pyodide (Python compiled to WebAssembly)
+
+### How It Works
+
+1. **JavaScript/TypeScript Execution**:
+   - Code runs in an isolated Web Worker
+   - Console output is captured and displayed
+   - Strict mode enforced for security
+   - 10-second timeout protection
+
+2. **Python Execution**:
+   - Uses Pyodide (Python 3.11 compiled to WASM)
+   - Runs entirely in the browser (no server required)
+   - Standard library support
+   - stdout/stderr capture
+   - 10-second timeout protection
+
+### Security Features
+
+- ✅ All execution in isolated Web Workers
+- ✅ No access to DOM or main thread
+- ✅ Timeout protection
+- ✅ No server-side code execution
+- ✅ Sandboxed execution environment
+
+### Limitations
+
+- Python execution requires Pyodide to load (~10-15MB, first load takes time)
+- Some Python packages may not be available
+- TypeScript is executed as JavaScript (no type checking at runtime)
+- Network access is restricted in Web Workers
+
 ## 🐛 Troubleshooting
 
 ### Port Already in Use
@@ -373,7 +419,12 @@ npm install
 
 ## 🔒 Security Considerations
 
-- Code execution happens in isolated Web Workers (client-side only)
+- **Code Execution**: All code execution happens in isolated Web Workers (client-side only)
+  - JavaScript/TypeScript: Executed in sandboxed Web Worker with strict mode
+  - Python: Executed using Pyodide (Python compiled to WASM) in isolated Web Worker
+  - No server-side code execution - all code runs in the browser
+  - Timeout protection (10-12 seconds) to prevent infinite loops
+  - Isolated execution context prevents access to DOM and main thread
 - Input validation on all endpoints
 - Rate limiting to prevent abuse
 - Session-based authentication (anonymous)
@@ -381,16 +432,38 @@ npm install
 
 ## 🚀 Deployment
 
-### Frontend
+### Docker Deployment (Recommended)
 
-Build and serve static files:
+**Build and run with Docker:**
+```bash
+# Build the image
+docker build -t online-coding-interview .
+
+# Run the container
+docker run -p 3001:3001 \
+  -e NODE_ENV=production \
+  -e PORT=3001 \
+  online-coding-interview
+```
+
+**Using Docker Compose:**
+```bash
+docker-compose up -d
+```
+
+The application will be available at `http://localhost:3001`
+
+**For detailed Docker instructions, see [DOCKER.md](./DOCKER.md)**
+
+### Manual Deployment
+
+**Frontend:**
 ```bash
 npm run build
 # Serve dist/ directory with any static file server
 ```
 
-### Backend
-
+**Backend:**
 ```bash
 cd backend
 npm run build
@@ -400,8 +473,8 @@ npm run start:prod
 ### Environment Variables for Production
 
 Set appropriate values for:
-- `FRONTEND_URL` - Your frontend domain
-- `PORT` - Backend port
+- `FRONTEND_URL` - Your frontend domain (e.g., `https://yourdomain.com`)
+- `PORT` - Backend port (default: 3001)
 - `NODE_ENV=production`
 
 ## 📝 License

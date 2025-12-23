@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+
+# Build outputs (will be built in Docker)
+dist/
+backend/dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Test files
+coverage/
+backend/coverage/
+test-results/
+playwright-report/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (optional - include if you want)
+# README.md
+# *.md
+
+# CI/CD
+.github/
+
+# Logs
+*.log
+npm-debug.log*
+
