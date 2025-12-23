@@ -50,13 +50,24 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       }
     });
 
-    // Configure editor
+    // Configure editor with syntax highlighting support
     editor.updateOptions({
       readOnly,
       minimap: { enabled: true },
       fontSize: 14,
       tabSize: 2,
       wordWrap: 'on',
+      // Enable syntax highlighting features
+      colorDecorators: true,
+      bracketPairColorization: {
+        enabled: true,
+      },
+      // Enable IntelliSense features
+      quickSuggestions: true,
+      suggestOnTriggerCharacters: true,
+      acceptSuggestionOnEnter: 'on',
+      tabCompletion: 'on',
+      wordBasedSuggestions: 'matchingDocuments',
     });
   };
 
@@ -80,7 +91,23 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       const model = editorRef.current.getModel();
       if (model) {
         const langConfig = SUPPORTED_LANGUAGES.find(l => l.value === language);
-        monacoRef.current.editor.setModelLanguage(model, langConfig?.monacoLang || 'javascript');
+        const monacoLanguage = langConfig?.monacoLang || 'javascript';
+        
+        // Set the language for syntax highlighting
+        monacoRef.current.editor.setModelLanguage(model, monacoLanguage);
+        
+        // Configure language-specific settings
+        if (monacoLanguage === 'python') {
+          // Python-specific settings
+          editorRef.current.updateOptions({
+            tabSize: 4, // Python uses 4 spaces
+          });
+        } else if (monacoLanguage === 'javascript' || monacoLanguage === 'typescript') {
+          // JavaScript/TypeScript settings
+          editorRef.current.updateOptions({
+            tabSize: 2, // JS/TS typically uses 2 spaces
+          });
+        }
       }
     }
   }, [language]);

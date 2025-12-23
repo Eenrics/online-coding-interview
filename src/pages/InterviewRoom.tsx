@@ -14,10 +14,26 @@ export const InterviewRoom: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const [code, setCode] = useState<string>('// Write your code here\nconsole.log("Hello, World!");');
+  // Get default code based on language
+  const getDefaultCode = (lang: Language): string => {
+    switch (lang) {
+      case 'python':
+        return '# Write your code here\nprint("Hello, World!")';
+      case 'typescript':
+        return '// Write your code here\nconsole.log("Hello, World!");';
+      case 'javascript':
+      default:
+        return '// Write your code here\nconsole.log("Hello, World!");';
+    }
+  };
+
   const [language, setLanguage] = useState<Language>(
     (searchParams.get('language') as Language) || DEFAULT_LANGUAGE
   );
+  const [code, setCode] = useState<string>(() => {
+    const initialLang = (searchParams.get('language') as Language) || DEFAULT_LANGUAGE;
+    return getDefaultCode(initialLang);
+  });
   const [executionResult, setExecutionResult] = useState<CodeExecutionResult | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -99,9 +115,14 @@ export const InterviewRoom: React.FC = () => {
     });
   };
 
-  onLanguageChangedRef.current = (newLanguage) => {
-    setLanguage(newLanguage);
-  };
+    onLanguageChangedRef.current = (newLanguage) => {
+      setLanguage(newLanguage);
+      // Update code to language-specific default if current code is the default
+      const currentDefault = getDefaultCode(language);
+      if (code === currentDefault || code.trim() === currentDefault.trim()) {
+        setCode(getDefaultCode(newLanguage));
+      }
+    };
 
   onPresenceUpdateRef.current = (updatedUsers) => {
     setUsers(Array.isArray(updatedUsers) ? updatedUsers : []);
@@ -156,8 +177,13 @@ export const InterviewRoom: React.FC = () => {
 
   const handleLanguageChange = useCallback((newLanguage: Language) => {
     setLanguage(newLanguage);
+    // Update code to language-specific default if current code is the default
+    const currentDefault = getDefaultCode(language);
+    if (code === currentDefault || code.trim() === currentDefault.trim()) {
+      setCode(getDefaultCode(newLanguage));
+    }
     sendLanguageChange(newLanguage);
-  }, [sendLanguageChange]);
+  }, [sendLanguageChange, language, code]);
 
   const handleRunCode = useCallback(async () => {
     if (!codeExecutorRef.current) return;

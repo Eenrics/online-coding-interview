@@ -1,153 +1,420 @@
-# Online Coding Interview Platform - Frontend
+# Online Coding Interview Platform
 
-## Phase 1: Frontend Implementation
+A production-ready online coding interview platform with real-time collaborative code editing and safe in-browser code execution.
 
-This is the frontend implementation of the online coding interview platform with real-time collaborative code editing and safe in-browser code execution.
+## 🎯 Project Overview
 
-### Architecture Overview
+This platform enables interviewers and candidates to collaborate in real-time on coding challenges. Key features include:
 
-The frontend is built with:
-- **React 18** with TypeScript for type safety
-- **Vite** for fast development and building
-- **Monaco Editor** for code editing with syntax highlighting
-- **Yjs** with WebSocket provider for CRDT-based collaborative editing
-- **Socket.IO Client** for real-time synchronization
-- **Web Workers** for safe code execution (no eval on main thread)
+- **Real-time collaborative editing** - Multiple users can edit code simultaneously
+- **Multiple language support** - JavaScript, TypeScript, and Python
+- **Safe code execution** - Code runs in isolated Web Workers (no server-side execution)
+- **Session management** - Create shareable interview sessions
+- **Live synchronization** - Changes appear instantly to all participants
 
-### Project Structure
+## 🏗️ Architecture
+
+### High-Level Architecture
 
 ```
-src/
-├── components/          # Reusable UI components
-│   ├── CodeEditor.tsx  # Collaborative Monaco editor with Yjs
-│   ├── LanguageSelector.tsx
-│   └── OutputConsole.tsx
-├── pages/              # Page components
-│   ├── CreateSession.tsx
-│   └── InterviewRoom.tsx
-├── hooks/              # Custom React hooks
-│   └── useWebSocket.ts # WebSocket connection management
-├── services/           # Business logic services
-│   └── codeExecutor.ts # Code execution service
-├── workers/            # Web Workers
-│   └── codeWorker.ts   # Code execution worker
-├── types/              # TypeScript type definitions
-│   └── index.ts
-├── utils/              # Utility functions and constants
-│   └── constants.ts
-├── App.tsx             # Main app component with routing
-├── main.tsx            # Application entry point
-└── index.css           # Global styles
+┌─────────────┐         ┌─────────────┐         ┌─────────────┐
+│   Browser   │◄───────►│   Backend   │◄───────►│   Storage   │
+│  (React)    │  REST   │  (NestJS)   │          │  (Memory)  │
+│             │  + WS   │             │          │             │
+└─────────────┘         └─────────────┘          └─────────────┘
+      │                        │
+      │                        │
+      ▼                        ▼
+┌─────────────┐         ┌─────────────┐
+│ Web Workers │         │  WebSocket  │
+│ (Code Exec) │         │   Gateway   │
+└─────────────┘         └─────────────┘
 ```
 
-### Key Features
+### Tech Stack
 
-1. **Session Creation**
-   - Create unique interview sessions
-   - Generate shareable links
-   - Fallback to client-side sessions if backend is unavailable
+**Frontend:**
+- React 18 + TypeScript
+- Vite (build tool)
+- Monaco Editor (code editor)
+- Socket.IO Client (WebSocket)
+- React Router (routing)
 
-2. **Collaborative Code Editor**
-   - Real-time collaborative editing using Yjs CRDT
-   - Syntax highlighting for JavaScript, TypeScript, and Python
-   - Cursor position synchronization
-   - Conflict-free concurrent editing
+**Backend:**
+- NestJS 10 + TypeScript
+- Express (HTTP server)
+- Socket.IO (WebSocket server)
+- class-validator (validation)
 
-3. **Language Support**
-   - JavaScript (full execution)
-   - TypeScript (full execution)
-   - Python (simulated execution - requires Pyodide for full support)
+**Testing:**
+- Jest + Supertest (backend integration)
+- Playwright (frontend E2E)
+- socket.io-client (WebSocket testing)
 
-4. **Code Execution**
-   - Safe execution in Web Workers
-   - No eval on main thread
-   - Execution timeout protection
-   - Error handling and output capture
+## 📋 Prerequisites
 
-5. **Real-time Synchronization**
-   - WebSocket connection via Socket.IO
-   - Automatic reconnection on disconnect
-   - Presence awareness (user join/leave)
-   - Code and cursor updates broadcast
+- **Node.js** v18 or higher
+- **npm** v9 or higher (comes with Node.js)
+- **Git** (for cloning the repository)
 
-6. **User Experience**
-   - Connection status indicator
-   - User count display
-   - Copy session link functionality
-   - Clean, modern UI with dark theme
+Verify installation:
+```bash
+node --version  # Should be v18+
+npm --version   # Should be v9+
+```
 
-### Security Considerations
+## 🚀 Installation
 
-1. **Code Execution**
-   - Code runs in isolated Web Workers
-   - No direct eval() on main thread
-   - Execution timeout limits
-   - Restricted imports for Python simulation
-
-2. **Input Validation**
-   - TypeScript types for all data structures
-   - Input sanitization in Web Workers
-   - Error boundaries for React components
-
-3. **WebSocket Security**
-   - Session-based authentication (anonymous)
-   - User ID validation
-   - Rate limiting considerations (backend)
-
-### Installation & Development
+### 1. Clone the Repository
 
 ```bash
-# Install dependencies
+git clone <repository-url>
+cd online-coding-interview
+```
+
+### 2. Install Frontend Dependencies
+
+```bash
 npm install
+```
 
-# Start development server
+### 3. Install Backend Dependencies
+
+```bash
+cd backend
+npm install
+cd ..
+```
+
+### 4. Install Playwright (for E2E tests)
+
+```bash
+npx playwright install chromium
+```
+
+## 🏃 Running the Application
+
+### Development Mode (Recommended)
+
+**Option 1: Run Both Together (Easiest)**
+```bash
+npm run dev:all
+```
+
+This will start both backend and frontend simultaneously. The output will be color-coded:
+- **Backend** (blue) - runs on `http://localhost:3001`
+- **Frontend** (green) - runs on `http://localhost:3000`
+
+**Option 2: Run Separately**
+
+**Terminal 1 - Backend:**
+```bash
+npm run dev:backend
+# or
+cd backend && npm run start:dev
+```
+
+The backend will start on `http://localhost:3001`
+
+**Terminal 2 - Frontend:**
+```bash
 npm run dev
+```
 
-# Build for production
+The frontend will start on `http://localhost:3000`
+
+**Open in Browser:**
+```
+http://localhost:3000
+```
+
+### Production Build
+
+**Build Frontend:**
+```bash
 npm run build
+```
 
-# Preview production build
+**Build Backend:**
+```bash
+cd backend
+npm run build
+```
+
+**Run Production:**
+```bash
+# Terminal 1
+cd backend
+npm run start:prod
+
+# Terminal 2 (from root)
 npm run preview
 ```
 
-### Configuration
+## 🧪 Running Tests
 
-The frontend expects:
-- Backend API at `http://localhost:3001` (configurable via `VITE_API_BASE_URL`)
-- WebSocket server at `http://localhost:3001` (configurable via `VITE_WS_URL`)
+### Backend Integration Tests
+
+```bash
+cd backend
+npm run test:integration
+```
+
+Run with watch mode:
+```bash
+npm run test:integration:watch
+```
+
+### Frontend Integration Tests (Playwright)
+
+**Run all E2E tests:**
+```bash
+npm run test:integration
+```
+
+**Run with UI mode:**
+```bash
+npm run test:integration:ui
+```
+
+**Run in headed mode (see browser):**
+```bash
+npm run test:integration:headed
+```
+
+**Run specific test file:**
+```bash
+npx playwright test tests/integration/session-lifecycle.spec.ts
+```
+
+### All Tests
+
+Run both backend and frontend tests:
+```bash
+# Backend tests
+cd backend && npm run test:integration && cd ..
+
+# Frontend tests
+npm run test:integration
+```
+
+## 🔧 Environment Variables
+
+### Backend (.env)
+
+Create `backend/.env`:
+
+```env
+PORT=3001
+FRONTEND_URL=http://localhost:3000
+WS_URL=ws://localhost:3001
+NODE_ENV=development
+```
+
+### Frontend (.env)
+
+Create `.env` (optional, defaults work):
+
+```env
+VITE_API_BASE_URL=http://localhost:3001
+VITE_WS_URL=http://localhost:3001
+```
+
+### Test Environment
+
+Tests use default ports and don't require environment variables. The test setup automatically configures isolated test servers.
+
+## 📜 Available Scripts
+
+### Frontend Scripts
+
+```bash
+npm run dev              # Start frontend development server only
+npm run dev:backend      # Start backend development server only
+npm run dev:all          # Start both frontend and backend together
+npm run build            # Build for production
+npm run preview          # Preview production build
+npm run lint             # Lint code
+npm run test:integration # Run E2E tests
+```
+
+### Backend Scripts
+
+```bash
+cd backend
+npm run start:dev        # Start development server with watch
+npm run start:prod       # Start production server
+npm run build            # Build for production
+npm run test             # Run unit tests
+npm run test:integration # Run integration tests
+npm run test:cov         # Run tests with coverage
+npm run lint             # Lint code
+```
+
+## 📁 Project Structure
+
+```
+online-coding-interview/
+├── backend/                 # NestJS backend
+│   ├── src/
+│   │   ├── common/         # Shared DTOs, interfaces
+│   │   ├── health/         # Health check
+│   │   ├── sessions/       # Session management
+│   │   ├── websocket/      # WebSocket gateway
+│   │   └── rate-limit/     # Rate limiting
+│   ├── test/
+│   │   └── integration/     # Integration tests
+│   └── package.json
+├── src/                     # React frontend
+│   ├── components/         # UI components
+│   ├── pages/              # Page components
+│   ├── hooks/              # React hooks
+│   ├── services/           # Business logic
+│   └── workers/            # Web Workers
+├── tests/
+│   └── integration/         # Playwright E2E tests
+├── openapi.yaml            # API specification
+├── websocket-events.md     # WebSocket events doc
+└── README.md              # This file
+```
+
+## 🧪 Test Coverage
+
+### Backend Integration Tests
+
+- ✅ Session lifecycle (create, get, join, delete)
+- ✅ WebSocket connection handling
+- ✅ Code update synchronization
+- ✅ Language change propagation
+- ✅ Presence updates
+- ✅ Disconnection handling
+- ✅ Rate limiting
+
+### Frontend Integration Tests
+
+- ✅ Session creation and navigation
+- ✅ Real-time code synchronization
+- ✅ Multi-user collaboration
+- ✅ Language switching
+- ✅ Code execution
+- ✅ Reconnection handling
+
+## 🔌 API Endpoints
+
+### REST API
+
+- `GET /api/health` - Health check
+- `POST /api/sessions` - Create session
+- `GET /api/sessions/:sessionId` - Get session info
+- `POST /api/sessions/:sessionId/join` - Join session
+
+See `openapi.yaml` for complete API documentation.
 
 ### WebSocket Events
 
-The frontend emits and listens to the following events:
-
 **Client → Server:**
-- `code-update`: Code changes from editor
-- `cursor-update`: Cursor position changes
-- `language-changed`: Language selection changes
+- `code-update` - Send code changes
+- `cursor-update` - Send cursor position
+- `language-changed` - Change language
 
 **Server → Client:**
-- `code-update`: Code changes from other users
-- `cursor-update`: Cursor updates from other users
-- `user-joined`: New user joined session
-- `user-left`: User left session
-- `language-changed`: Language changed by another user
-- `presence-update`: Updated list of connected users
+- `code-update` - Receive code changes
+- `cursor-update` - Receive cursor updates
+- `user-joined` - User joined session
+- `user-left` - User left session
+- `language-changed` - Language changed
+- `presence-update` - User list update
 
-### State Management
+See `websocket-events.md` for detailed event specifications.
 
-- **Local State**: React useState for component-level state
-- **Session Storage**: User ID and name persistence
-- **Yjs Document**: Shared document state for collaborative editing
-- **WebSocket**: Real-time synchronization state
+## 🐛 Troubleshooting
 
-### Reconnection Logic
+### Port Already in Use
 
-- Automatic reconnection on disconnect
-- Configurable reconnection attempts (default: 5)
-- Exponential backoff for reconnection delays
-- Connection status UI feedback
+**Backend (3001):**
+```bash
+lsof -ti:3001 | xargs kill -9
+```
 
-### Next Steps
+**Frontend (3000):**
+```bash
+lsof -ti:3000 | xargs kill -9
+```
 
-This frontend is ready for Phase 2 (OpenAPI Specification) and Phase 3 (Backend Implementation). The frontend will work with a mock backend or can be extended to work fully client-side for development purposes.
+### WebSocket Connection Issues
 
+1. Verify backend is running: `curl http://localhost:3001/api/health`
+2. Check browser console for errors
+3. Verify CORS settings in backend
+4. Check firewall/network settings
+
+### Tests Failing
+
+1. Ensure both frontend and backend are built
+2. Check that ports 3000 and 3001 are available
+3. Run tests sequentially (not in parallel)
+4. Check test logs for specific errors
+
+### Dependencies Issues
+
+```bash
+# Clear cache and reinstall
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
+```
+
+## 📚 Additional Documentation
+
+- **API Specification**: `openapi.yaml`
+- **WebSocket Events**: `websocket-events.md`
+- **Testing Strategy**: `TESTING_STRATEGY.md`
+- **Quick Start**: `START.md`
+
+## 🔒 Security Considerations
+
+- Code execution happens in isolated Web Workers (client-side only)
+- Input validation on all endpoints
+- Rate limiting to prevent abuse
+- Session-based authentication (anonymous)
+- CORS configured for development/production
+
+## 🚀 Deployment
+
+### Frontend
+
+Build and serve static files:
+```bash
+npm run build
+# Serve dist/ directory with any static file server
+```
+
+### Backend
+
+```bash
+cd backend
+npm run build
+npm run start:prod
+```
+
+### Environment Variables for Production
+
+Set appropriate values for:
+- `FRONTEND_URL` - Your frontend domain
+- `PORT` - Backend port
+- `NODE_ENV=production`
+
+## 📝 License
+
+MIT
+
+## 🤝 Contributing
+
+1. Create a feature branch
+2. Write tests for new features
+3. Ensure all tests pass
+4. Submit a pull request
+
+## 📞 Support
+
+For issues and questions, please open an issue in the repository.
