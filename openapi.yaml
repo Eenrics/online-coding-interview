@@ -1,0 +1,515 @@
+openapi: 3.0.3
+info:
+  title: Online Coding Interview Platform API
+  description: |
+    REST API and WebSocket specification for the online coding interview platform.
+    This API supports real-time collaborative code editing with safe in-browser code execution.
+    
+    ## Authentication
+    The API uses anonymous session-based authentication. No login is required.
+    Users are identified by session tokens stored in cookies or provided in headers.
+    
+    ## WebSocket Events
+    See the separate WebSocket Events documentation for real-time event specifications.
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:3001
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: Sessions
+    description: Session management endpoints
+  - name: Health
+    description: Health check and status endpoints
+
+paths:
+  /api/health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Check if the API server is running and healthy
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: 'ok'
+                timestamp: '2024-01-15T10:30:00Z'
+                version: '1.0.0'
+
+  /api/sessions:
+    post:
+      tags:
+        - Sessions
+      summary: Create a new interview session
+      description: |
+        Creates a new interview session with a unique ID that can be shared with candidates.
+        The session is created with default settings and can be joined immediately.
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+            example:
+              language: 'javascript'
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+              example:
+                id: '550e8400-e29b-41d4-a716-446655440000'
+                createdAt: '2024-01-15T10:30:00Z'
+                language: 'javascript'
+                participantCount: 1
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'INVALID_REQUEST'
+                message: 'Invalid language specified'
+                statusCode: 400
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'RATE_LIMIT_EXCEEDED'
+                message: 'Too many requests. Please try again later.'
+                statusCode: 429
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags:
+        - Sessions
+      summary: List active sessions (Internal)
+      description: |
+        Returns a list of active sessions. This endpoint is marked as internal
+        and should be protected in production environments.
+      operationId: listSessions
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of sessions to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of sessions to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of active sessions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionListResponse'
+        '401':
+          description: Unauthorized (Internal endpoint)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/sessions/{sessionId}:
+    get:
+      tags:
+        - Sessions
+      summary: Get session information
+      description: |
+        Retrieves information about a specific session including metadata,
+        participant count, and current language.
+      operationId: getSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique session identifier
+          schema:
+            type: string
+            format: uuid
+            example: '550e8400-e29b-41d4-a716-446655440000'
+      responses:
+        '200':
+          description: Session information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+              example:
+                id: '550e8400-e29b-41d4-a716-446655440000'
+                createdAt: '2024-01-15T10:30:00Z'
+                language: 'javascript'
+                participantCount: 3
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'SESSION_NOT_FOUND'
+                message: 'Session with the specified ID does not exist'
+                statusCode: 404
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Sessions
+      summary: Delete a session (Internal)
+      description: |
+        Deletes a session and disconnects all participants.
+        This endpoint is marked as internal.
+      operationId: deleteSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique session identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session deleted successfully
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized (Internal endpoint)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/sessions/{sessionId}/join:
+    post:
+      tags:
+        - Sessions
+      summary: Join an existing session
+      description: |
+        Joins an existing session. This endpoint validates the session exists
+        and returns connection information. The actual connection is established
+        via WebSocket.
+      operationId: joinSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Unique session identifier
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinSessionRequest'
+            example:
+              userId: 'user-123'
+              userName: 'John Doe'
+      responses:
+        '200':
+          description: Successfully joined session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinSessionResponse'
+              example:
+                sessionId: '550e8400-e29b-41d4-a716-446655440000'
+                userId: 'user-123'
+                wsUrl: 'ws://localhost:3001'
+                participantCount: 3
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+          example: 'ok'
+        timestamp:
+          type: string
+          format: date-time
+          example: '2024-01-15T10:30:00Z'
+        version:
+          type: string
+          example: '1.0.0'
+
+    CreateSessionRequest:
+      type: object
+      required:
+        - language
+      properties:
+        language:
+          $ref: '#/components/schemas/Language'
+      additionalProperties: false
+
+    JoinSessionRequest:
+      type: object
+      required:
+        - userId
+        - userName
+      properties:
+        userId:
+          type: string
+          description: Unique identifier for the user
+          minLength: 1
+          maxLength: 100
+          example: 'user-123'
+        userName:
+          type: string
+          description: Display name for the user
+          minLength: 1
+          maxLength: 50
+          example: 'John Doe'
+      additionalProperties: false
+
+    SessionResponse:
+      type: object
+      required:
+        - id
+        - createdAt
+        - language
+        - participantCount
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique session identifier
+          example: '550e8400-e29b-41d4-a716-446655440000'
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the session was created
+          example: '2024-01-15T10:30:00Z'
+        language:
+          $ref: '#/components/schemas/Language'
+        participantCount:
+          type: integer
+          description: Number of currently connected participants
+          minimum: 0
+          example: 3
+
+    SessionListResponse:
+      type: object
+      required:
+        - sessions
+        - total
+        - limit
+        - offset
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionResponse'
+        total:
+          type: integer
+          description: Total number of active sessions
+          minimum: 0
+        limit:
+          type: integer
+          description: Maximum number of sessions returned
+          minimum: 1
+        offset:
+          type: integer
+          description: Number of sessions skipped
+          minimum: 0
+
+    JoinSessionResponse:
+      type: object
+      required:
+        - sessionId
+        - userId
+        - wsUrl
+        - participantCount
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          example: '550e8400-e29b-41d4-a716-446655440000'
+        userId:
+          type: string
+          example: 'user-123'
+        wsUrl:
+          type: string
+          format: uri
+          description: WebSocket URL for real-time connection
+          example: 'ws://localhost:3001'
+        participantCount:
+          type: integer
+          minimum: 0
+          example: 3
+
+    Language:
+      type: string
+      enum: [javascript, typescript, python]
+      description: Supported programming language
+      example: 'javascript'
+
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - color
+      properties:
+        id:
+          type: string
+          description: Unique user identifier
+          example: 'user-123'
+        name:
+          type: string
+          description: Display name
+          example: 'John Doe'
+        color:
+          type: string
+          description: Color code for UI representation (hex format)
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          example: '#FF5733'
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - statusCode
+      properties:
+        error:
+          type: string
+          description: Error code identifier
+          example: 'SESSION_NOT_FOUND'
+        message:
+          type: string
+          description: Human-readable error message
+          example: 'Session with the specified ID does not exist'
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 404
+        details:
+          type: object
+          description: Additional error details (optional)
+          additionalProperties: true
+
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      description: Unique session identifier (UUID)
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: 'NOT_FOUND'
+            message: 'The requested resource was not found'
+            statusCode: 404
+
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: 'BAD_REQUEST'
+            message: 'Invalid request parameters'
+            statusCode: 400
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: 'INTERNAL_SERVER_ERROR'
+            message: 'An unexpected error occurred'
+            statusCode: 500
+
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: 'RATE_LIMIT_EXCEEDED'
+            message: 'Too many requests. Please try again later.'
+            statusCode: 429
+
