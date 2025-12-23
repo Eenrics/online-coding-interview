@@ -147,7 +147,7 @@ export const InterviewRoom: React.FC = () => {
   });
 
   const lastSentCodeRef = React.useRef(code);
-  const sendCodeUpdateTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const sendCodeUpdateTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleCodeChange = useCallback((newCode: string) => {
     console.log('Code changed locally:', newCode.substring(0, 50));

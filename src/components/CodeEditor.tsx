@@ -18,9 +18,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   value,
   language,
   onChange,
-  onLanguageChange,
-  sessionId,
-  userId,
+  onLanguageChange: _onLanguageChange,
+  sessionId: _sessionId,
+  userId: _userId,
   readOnly = false,
 }) => {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -67,7 +67,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       suggestOnTriggerCharacters: true,
       acceptSuggestionOnEnter: 'on',
       tabCompletion: 'on',
-      wordBasedSuggestions: 'matchingDocuments',
     });
   };
 

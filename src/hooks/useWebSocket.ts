@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { WebSocketMessage, User, Language } from '../types';
-import { WS_URL, RECONNECTION_ATTEMPTS, RECONNECTION_DELAY } from '../utils/constants';
+import { WS_URL } from '../utils/constants';
 
 interface UseWebSocketOptions {
   sessionId: string;
@@ -21,7 +21,6 @@ export function useWebSocket(options: UseWebSocketOptions) {
   const [connectionError, setConnectionError] = useState<Error | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const optionsRef = useRef(options);
 
   // Keep options ref up to date
@@ -112,20 +111,6 @@ export function useWebSocket(options: UseWebSocketOptions) {
 
     socketRef.current = socket;
   }, []); // Empty deps - we use optionsRef instead
-
-  const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
-
-    setIsConnected(false);
-  }, []);
 
   const sendCodeUpdate = useCallback((delta: unknown, version: number) => {
     if (socketRef.current?.connected) {

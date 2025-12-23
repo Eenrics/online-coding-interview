@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import type { Language } from '../types';
 import { DEFAULT_LANGUAGE, API_BASE_URL } from '../utils/constants';
 
 export const CreateSession: React.FC = () => {
